@@ -1,3 +1,6 @@
+# =====================================
+# Eduardo H. Kasper - 0090462
+# =====================================
 class Edge
   attr_accessor :source, :dest, :length
   
@@ -81,7 +84,7 @@ class Graph < Array
   end
 end
 
-file_lines = open("input-02.csv", "r").each_line
+file_lines = open(ARGV[0], "r").each_line
 graph_file = file_lines.map { |l| l.split(",").map(&:to_i) }
 elements = graph_file.first.length - 1
 
@@ -91,30 +94,58 @@ for i in 0..(elements)
   graph.push i
 end
 
+def degree_centrality graph, i
+  cont = 0
+  graph.each_with_index do |line, source|
+    line.each_with_index do |node, target|
+      if source == i
+        cont += 1 if node == 1
+      else
+        cont += 1 if target == i and node == 1
+      end
+    end
+  end
+  
+  cont.to_f/(graph.first.length-1)
+end
+
+def closeness_centrality graph
+  centralities = Array.new
+  graph.each do |nodes|
+    sum = 0
+    nodes.each do |node|
+      sum += node if node != Float::INFINITY
+    end
+    centralities.push (graph.first.length - 1).to_f / sum
+  end
+
+  centralities
+end
+
 graph_file.each_with_index do |line, source|
     line.each_with_index { |node, dest| graph.connect(source, dest) if node > 0 }
 end
 
 distances = Array.new
-avarages = Hash.new
-for i in (0..(elements))
-    d = Array.new
-    for y in (0..(elements))
-      d.push graph.dijkstra(i, y)
-    end
+for i in 0..elements
+  row = Array.new
+  for dist in 0..elements
+    row.push graph.dijkstra(i,  dist)
+  end
 
-    sum = 0
-    for value in d
-      if (value != Float::INFINITY)
-        sum += value 
-      end
-    end
-    avarage = sum.to_f/elements.to_f
-    avarages[i] = avarage
-
-    distances.push d
+  distances.push row
 end
 
-p avarages.values.sort
+p "PC:"
 
-#p distances
+closeness_centrality(distances).each_with_index do |centrality, node|
+  p "#{node} => #{centrality}"
+end
+
+p ""
+p "GC: "
+
+distances.each_with_index do |line, source|
+  p "#{source} => #{degree_centrality(distances, source)}"
+end
+
